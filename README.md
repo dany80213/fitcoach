@@ -10,7 +10,12 @@ xcodegen generate
 open FitCoach.xcodeproj
 ```
 
-Richiede Xcode 26. Il progetto è generato da `project.yml`: non committare `FitCoach.xcodeproj`.
+Richiede **Xcode 26** e iOS 26 / macOS 26 (interfaccia Liquid Glass). Il progetto è generato da `project.yml`: non committare `FitCoach.xcodeproj`.
+
+## Crediti e licenze dei dati
+
+- Esercizi: [free-exercise-db](https://github.com/yuhonas/free-exercise-db) e [wger](https://wger.de) (CC-BY-SA 3.0, attribuzione obbligatoria). I dati vengono scaricati a runtime e salvati solo sul dispositivo, non sono inclusi nel repository.
+- Alimenti: [Open Food Facts](https://world.openfoodfacts.org) (ODbL).
 
 ## Struttura
 

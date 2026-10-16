@@ -19,6 +19,7 @@ struct WorkoutDetailView: View {
             }
         }
         .navigationTitle(workout.name)
+        .glassList()
         .sheet(isPresented: $showPicker) { ExercisePickerView { addExercise($0) } }
     }
 

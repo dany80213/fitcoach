@@ -14,35 +14,48 @@ struct AgentView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                ScrollViewReader { proxy in
-                    ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 10) {
-                            if messages.isEmpty {
-                                ForEach(suggestions, id: \.self) { s in
-                                    Button(s) { input = s; send() }.buttonStyle(.bordered)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 10) {
+                        if messages.isEmpty {
+                            GlassEffectContainer(spacing: 10) {
+                                VStack(alignment: .leading, spacing: 10) {
+                                    ForEach(suggestions, id: \.self) { s in
+                                        Button(s) { input = s; send() }.buttonStyle(.glass)
+                                    }
                                 }
                             }
-                            ForEach(messages) { m in
-                                Text(m.text)
-                                    .padding(10)
-                                    .background(m.role == "user" ? Color.accentColor.opacity(0.2) : Color.secondary.opacity(0.15),
-                                                in: RoundedRectangle(cornerRadius: 12))
-                                    .frame(maxWidth: .infinity, alignment: m.role == "user" ? .trailing : .leading)
-                                    .id(m.id)
-                            }
-                            if busy { ProgressView() }
-                            if let error { Text(error).foregroundStyle(.red).font(.caption) }
                         }
-                        .padding()
+                        ForEach(messages) { m in
+                            Text(m.text)
+                                .padding(12)
+                                .glassEffect(m.role == "user" ? .regular.tint(.accentColor.opacity(0.45)) : .regular,
+                                             in: .rect(cornerRadius: 18))
+                                .frame(maxWidth: .infinity, alignment: m.role == "user" ? .trailing : .leading)
+                                .id(m.id)
+                        }
+                        if busy { ProgressView().padding() }
+                        if let error { Text(error).foregroundStyle(.red).font(.caption) }
                     }
-                    .onChange(of: messages.count) { if let l = messages.last { proxy.scrollTo(l.id) } }
+                    .padding()
                 }
-                HStack {
-                    TextField("Chiedi al coach…", text: $input).textFieldStyle(.roundedBorder).onSubmit(send)
-                    Button("Invia", action: send).disabled(busy || input.trimmingCharacters(in: .whitespaces).isEmpty)
+                .onChange(of: messages.count) { if let l = messages.last { proxy.scrollTo(l.id) } }
+            }
+            .background(AppBackground())
+            .safeAreaInset(edge: .bottom) {
+                GlassEffectContainer(spacing: 8) {
+                    HStack(spacing: 8) {
+                        TextField("Chiedi al coach…", text: $input)
+                            .onSubmit(send)
+                            .padding(.horizontal, 16).padding(.vertical, 10)
+                            .glassEffect(.regular.interactive(), in: .capsule)
+                        Button(action: send) { Image(systemName: "arrow.up").font(.headline).padding(6) }
+                            .buttonStyle(.glassProminent)
+                            .buttonBorderShape(.circle)
+                            .disabled(busy || input.trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
                 }
-                .padding()
+                .padding(.horizontal).padding(.bottom, 4)
             }
             .navigationTitle("Coach")
             .toolbar { Button("Nuova chat") { messages = [] } }
@@ -79,6 +92,12 @@ struct SettingsView: View {
                     TextField("Calorie", value: $calorieGoal, format: .number)
                     TextField("Proteine (g)", value: $proteinGoal, format: .number)
                 }
+                Section("Crediti") {
+                    Text("Esercizi da free-exercise-db (pubblico) e wger.de, licenza CC-BY-SA 3.0. Alimenti da Open Food Facts (ODbL).")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Link("wger.de", destination: URL(string: "https://wger.de")!)
+                    Link("free-exercise-db", destination: URL(string: "https://github.com/yuhonas/free-exercise-db")!)
+                }
                 Section("Agente IA") {
                     SecureField("Chiave API Anthropic", text: $apiKey)
                         .onChange(of: apiKey) { Keychain.save(apiKey) }
@@ -87,6 +106,7 @@ struct SettingsView: View {
                 }
             }
             .formStyle(.grouped)
+            .glassList()
             .navigationTitle("Impostazioni")
         }
     }

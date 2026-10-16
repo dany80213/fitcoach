@@ -163,12 +163,18 @@ final class Exercise {
     var level: String
     var instructions: String
     var isCustom: Bool
+    /// Nomi alternativi (italiano, sinonimi) usati solo per la ricerca.
+    var aliases: String = ""
+    /// Origine dei dati: "free-exercise-db", "wger" o "custom".
+    var source: String = "free-exercise-db"
 
     init(key: String, name: String, muscle: String = "", secondary: String = "", equipment: String = "",
-         category: String = "", level: String = "", instructions: String = "", isCustom: Bool = false) {
+         category: String = "", level: String = "", instructions: String = "", isCustom: Bool = false,
+         aliases: String = "", source: String = "free-exercise-db") {
         self.key = key; self.name = name; self.muscle = muscle; self.secondary = secondary
         self.equipment = equipment; self.category = category; self.level = level
         self.instructions = instructions; self.isCustom = isCustom
+        self.aliases = aliases; self.source = isCustom ? "custom" : source
     }
 }
 

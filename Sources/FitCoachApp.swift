@@ -26,6 +26,9 @@ struct RootView: View {
             SettingsView()
                 .tabItem { Label("Impostazioni", systemImage: "gearshape") }
         }
+        #if os(iOS)
+        .tabBarMinimizeBehavior(.onScrollDown)
+        #endif
         .task { await ExerciseLibrary.autoSync(in: context) }
     }
 }

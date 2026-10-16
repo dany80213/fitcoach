@@ -15,16 +15,20 @@ struct NutritionView: View {
     var body: some View {
         NavigationStack {
             List {
+                Section { DatePicker("Giorno", selection: $day, displayedComponents: .date) }
                 Section {
-                    DatePicker("Giorno", selection: $day, displayedComponents: .date)
-                    VStack(alignment: .leading) {
-                        ProgressView(value: min(kcal / calorieGoal, 1)) { Text("\(Int(kcal)) / \(Int(calorieGoal)) kcal") }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("\(Int(kcal)) / \(Int(calorieGoal)) kcal").font(.title2.bold())
+                        ProgressView(value: min(kcal / calorieGoal, 1))
                         HStack {
                             Text("P \(Int(entries.reduce(0) { $0 + $1.protein })) / \(Int(proteinGoal)) g")
                             Text("C \(Int(entries.reduce(0) { $0 + $1.carbs })) g")
                             Text("G \(Int(entries.reduce(0) { $0 + $1.fat })) g")
                         }.font(.caption).foregroundStyle(.secondary)
                     }
+                    .glassCard()
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
                 }
                 ForEach(Meal.allCases) { meal in
                     let items = entries.filter { $0.meal == meal.rawValue }
@@ -45,6 +49,7 @@ struct NutritionView: View {
                     }
                 }
             }
+            .glassList()
             .navigationTitle("Calorie")
             .toolbar { Button { showAdd = true } label: { Label("Aggiungi", systemImage: "plus") } }
             .sheet(isPresented: $showAdd) { AddFoodView(day: day) }

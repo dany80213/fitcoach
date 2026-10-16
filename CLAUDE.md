@@ -1,6 +1,6 @@
 # FitCoach — contesto per agenti IA
 
-App nativa **SwiftUI multipiattaforma (iOS 17+ / macOS 14+)**, un solo target: tracking allenamenti (stile Hevy), diario calorie/macro (stile FatSecret) e un coach IA che risponde usando i dati dell'utente come contesto. UI in **italiano**.
+App nativa **SwiftUI multipiattaforma (iOS 26+ / macOS 26+, Liquid Glass)**, un solo target: tracking allenamenti (stile Hevy), diario calorie/macro (stile FatSecret) e un coach IA che risponde usando i dati dell'utente come contesto. UI in **italiano**.
 
 ## Build
 
@@ -21,7 +21,8 @@ Prima di dichiarare finita una modifica, compila **entrambe** le piattaforme. No
 |---|---|
 | `FitCoachApp.swift` | entry point, `TabView` (Allenamenti, Calorie, Coach, Impostazioni), `modelContainer` |
 | `Models.swift` | modelli SwiftData: `Workout` → `WorkoutExercise` → `SetEntry` (con `SetType`), `Routine` → `RoutineExercise` → `RoutineSet`, `Exercise` (libreria), `FoodEntry`; `FoodItem` (per 100 g) |
-| `ExerciseLibrary.swift` | import/sync della libreria esercizi da free-exercise-db (all'avvio se vuota o >7 giorni), nomi muscoli in italiano |
+| `ExerciseLibrary.swift` | import/sync della libreria esercizi da free-exercise-db + wger, con deduplica e alias (all'avvio se vuota, vecchia di >7 giorni o con `libraryVersion` obsoleta); nomi muscoli in italiano |
+| `Glass.swift` | `AppBackground` (sfondo sfumato) e helper `glassList()`, `transparentList()`, `glassCard()` |
 | `RoutineViews.swift` | scheda Allenamenti (Routine/Storico), editor routine, `ExercisePickerView`, `SetTypeMenu` |
 | `WorkoutViews.swift` | dettaglio allenamento, serie precompilate dall'ultima volta che l'esercizio è stato fatto |
 | `NutritionViews.swift` | diario giornaliero, ricerca alimento, scelta porzione/pasto, inserimento manuale |
@@ -36,7 +37,9 @@ Prima di dichiarare finita una modifica, compila **entrambe** le piattaforme. No
 - **Contesto dell'agente**: `ContextBuilder.build` ricalcola a ogni domanda gli ultimi 14 giorni di cibo e allenamenti. Il system prompt impone di basarsi solo su quei dati e di non dare consigli medici: mantieni queste regole. Modello in `AgentClient.model` (`claude-sonnet-5-5`).
 - **Relazioni SwiftData**: dopo `context.insert(x)` aggiungi l'oggetto all'array del padre (`parent.items.append(x)`); impostare solo il lato inverso (`x.parent = p`) non aggiorna subito la UI.
 - **Tipi di serie**: `SetType` (normal/warmup/failure/dropset). Le normali sono numerate, le altre mostrano W/F/D; il riscaldamento è escluso dal volume. Nuove proprietà dei modelli devono avere un valore di default (migrazione leggera sui dati esistenti).
-- **Libreria esercizi**: fonte `yuhonas/free-exercise-db` (nomi in inglese). Gli esercizi con `isCustom` non vanno mai sovrascritti dal sync.
+- **Libreria esercizi**: due fonti, `yuhonas/free-exercise-db` e `wger.de` (`/api/v2/exerciseinfo/?limit=1000`, ~1,2 MB gzip, CC-BY-SA 3.0: tieni i crediti in Impostazioni e README). Nomi in inglese; i nomi italiani di wger finiscono in `aliases` (solo per la ricerca). La deduplica usa `ExerciseLibrary.normalize` (ordine parole, plurali, flye→fly). Se cambi fonti o mappatura, incrementa `libraryVersion` per forzare il resync. Gli esercizi con `isCustom` non vanno mai sovrascritti dal sync.
+- **Liquid Glass**: target minimo iOS/macOS 26, quindi usa le API native (`.glassEffect`, `.buttonStyle(.glass/.glassProminent)`, `GlassEffectContainer`) senza fallback `#available`. Tab bar, toolbar e sheet diventano vetro da soli: non rimettere sfondi opachi sopra. Usa `AppBackground` dietro liste/chat, e `transparentList()` quando lo sfondo lo mette già il contenitore (evita giunzioni). Non sovrapporre più `glassEffect` annidati: raggruppali in un `GlassEffectContainer`.
+- **Test su iOS 26**: simulatore "iPhone 17 Pro" (iOS 26.0). Il runtime iOS 18 non esegue più l'app.
 - **Ricerca alimenti**: usa `https://search.openfoodfacts.org/search` (gratuito, senza chiave; `brands` è un array). Il vecchio `world.openfoodfacts.org/cgi/search.pl` va spesso in 503 e restituisce HTML: non tornarci. Per aggiungere FatSecret (OAuth2, serve client id/secret dell'utente) implementa `FoodSearchProvider`, non toccare le viste.
 - **Swift 5 language mode** (`SWIFT_VERSION: 5.0` in `project.yml`): non attivare Swift 6 strict concurrency senza migrare tutto.
 - **macOS**: app sandbox con `network.client` in `Sources/FitCoach.entitlements` (applicato solo a `sdk=macosx*`). Nuove capacità di rete/file vanno aggiunte lì.

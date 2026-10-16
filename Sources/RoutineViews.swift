@@ -20,12 +20,14 @@ struct TrainingView: View {
                 }
                 .pickerStyle(.segmented)
                 .padding([.horizontal, .top])
+                .padding(.bottom, 8)
                 switch tab {
                 case .routines: routineList
                 case .history: historyList
                 }
             }
             .navigationTitle("Allenamenti")
+            .background(AppBackground())
             .navigationDestination(for: Routine.self) { RoutineEditorView(routine: $0) }
             .navigationDestination(for: Workout.self) { WorkoutDetailView(workout: $0) }
             .toolbar {
@@ -61,7 +63,7 @@ struct TrainingView: View {
                         Button("Avvia") {
                             path.append(r.makeWorkout(in: context))
                         }
-                        .buttonStyle(.borderedProminent)
+                        .buttonStyle(.glassProminent)
                         .controlSize(.small)
                         .disabled(r.items.isEmpty)
                     }
@@ -69,6 +71,7 @@ struct TrainingView: View {
             }
             .onDelete { idx in idx.map { routines[$0] }.forEach(context.delete) }
         }
+        .transparentList()
         .overlay {
             if routines.isEmpty {
                 ContentUnavailableView("Nessuna routine", systemImage: "list.clipboard",
@@ -96,6 +99,7 @@ struct TrainingView: View {
             }
             .onDelete { idx in idx.map { workouts[$0] }.forEach(context.delete) }
         }
+        .transparentList()
         .overlay {
             if workouts.isEmpty {
                 ContentUnavailableView("Nessun allenamento", systemImage: "dumbbell",
@@ -126,6 +130,7 @@ struct RoutineEditorView: View {
             }
         }
         .navigationTitle(routine.name)
+        .glassList()
         .sheet(isPresented: $showPicker) {
             ExercisePickerView { name in
                 let item = RoutineExercise(exerciseName: name, order: routine.nextItemOrder)
@@ -211,9 +216,9 @@ struct SetTypeMenu: View {
         } label: {
             Text(label)
                 .font(.subheadline.bold())
-                .frame(width: 32, height: 32)
-                .background(color.opacity(0.2), in: Circle())
-                .foregroundStyle(color)
+                .frame(width: 34, height: 34)
+                .foregroundStyle(current == .normal ? Color.primary : color)
+                .glassEffect(.regular.tint(color.opacity(current == .normal ? 0.0 : 0.35)).interactive(), in: .circle)
         }
         .menuStyle(.borderlessButton)
         .fixedSize()
@@ -244,10 +249,16 @@ struct ExercisePickerView: View {
 
     private var muscles: [String] { Array(Set(all.map(\.muscle).filter { !$0.isEmpty })).sorted() }
 
+    /// Ogni parola cercata deve comparire (anche parziale) in nome, alias, muscolo (EN/IT) o attrezzo:
+    /// "chest fly", "pec dec", "petto manubri" trovano gli esercizi giusti.
     private var filtered: [Exercise] {
-        all.filter { e in
-            (muscle == nil || e.muscle == muscle) &&
-            (query.isEmpty || e.name.localizedCaseInsensitiveContains(query))
+        let tokens = query.lowercased().split(separator: " ").map(String.init)
+        return all.filter { e in
+            guard muscle == nil || e.muscle == muscle else { return false }
+            if tokens.isEmpty { return true }
+            let hay = [e.name, e.aliases, e.muscle, Muscle.label(e.muscle), e.equipment]
+                .joined(separator: " ").lowercased().folding(options: .diacriticInsensitive, locale: nil)
+            return tokens.allSatisfy { hay.contains($0.folding(options: .diacriticInsensitive, locale: nil)) }
         }
     }
 
@@ -261,7 +272,8 @@ struct ExercisePickerView: View {
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(e.name).foregroundStyle(.primary)
-                            Text([Muscle.label(e.muscle), e.equipment.capitalized].filter { !$0.isEmpty }.joined(separator: " · "))
+                            Text([Muscle.label(e.muscle), e.equipment.capitalized, e.aliases.split(separator: ",").first.map(String.init)]
+                                .compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · "))
                                 .font(.caption).foregroundStyle(.secondary)
                         }
                     }
@@ -280,6 +292,7 @@ struct ExercisePickerView: View {
                     }
                 }
             }
+            .glassList()
             .searchable(text: $query, prompt: "Cerca esercizio")
             .navigationTitle("Esercizi")
             .toolbar {
