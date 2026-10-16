@@ -8,7 +8,7 @@ struct FitCoachApp: App {
             RootView()
         }
         .modelContainer(for: [Workout.self, WorkoutExercise.self, SetEntry.self, FoodEntry.self,
-                              Exercise.self, Routine.self, RoutineExercise.self, RoutineSet.self])
+                              Exercise.self, Routine.self, RoutineExercise.self, RoutineSet.self, Profile.self])
     }
 }
 
@@ -17,14 +17,16 @@ struct RootView: View {
 
     var body: some View {
         TabView {
+            HomeView()
+                .tabItem { Label("Home", systemImage: "house") }
             TrainingView()
                 .tabItem { Label("Allenamenti", systemImage: "dumbbell") }
             NutritionView()
                 .tabItem { Label("Calorie", systemImage: "fork.knife") }
             AgentView()
                 .tabItem { Label("Coach", systemImage: "sparkles") }
-            SettingsView()
-                .tabItem { Label("Impostazioni", systemImage: "gearshape") }
+            ProfileView()
+                .tabItem { Label("Profilo", systemImage: "person.crop.circle") }
         }
         #if os(iOS)
         .tabBarMinimizeBehavior(.onScrollDown)

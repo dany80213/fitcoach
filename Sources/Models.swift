@@ -23,6 +23,8 @@ final class Workout {
             .reduce(0) { $0 + $1.weight * Double($1.reps) }
     }
 
+    var totalSetCount: Int { exercises.reduce(0) { $0 + $1.sets.count } }
+
     /// Serie dell'ultima volta che l'esercizio è stato fatto in un altro allenamento.
     static func previousSets(for name: String, excluding workout: Workout, in context: ModelContext) -> [SetEntry] {
         let d = FetchDescriptor<WorkoutExercise>(predicate: #Predicate { $0.name == name })
@@ -244,5 +246,78 @@ final class RoutineSet {
 
     init(order: Int, type: SetType = .normal, reps: Int = 10, weight: Double = 0) {
         self.order = order; self.type = type.rawValue; self.reps = reps; self.weight = weight
+    }
+}
+
+// MARK: - Profilo
+
+enum Sex: String, CaseIterable, Identifiable {
+    case male, female, other
+    var id: String { rawValue }
+    var title: String { switch self { case .male: "Uomo"; case .female: "Donna"; case .other: "Non specificato" } }
+}
+
+enum ActivityLevel: String, CaseIterable, Identifiable {
+    case sedentary, light, moderate, high
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .sedentary: "Sedentario"
+        case .light: "Leggero (1-3 allenamenti/sett.)"
+        case .moderate: "Moderato (3-5 allenamenti/sett.)"
+        case .high: "Intenso (6-7 allenamenti/sett.)"
+        }
+    }
+    var factor: Double {
+        switch self { case .sedentary: 1.2; case .light: 1.375; case .moderate: 1.55; case .high: 1.725 }
+    }
+}
+
+enum FitnessGoal: String, CaseIterable, Identifiable {
+    case lose, maintain, gain
+    var id: String { rawValue }
+    var title: String { switch self { case .lose: "Dimagrire"; case .maintain: "Mantenere"; case .gain: "Aumentare massa" } }
+    var calorieDelta: Double { switch self { case .lose: -400; case .maintain: 0; case .gain: 300 } }
+}
+
+/// Profilo personale dell'utente (un solo record).
+@Model
+final class Profile {
+    var name: String = ""
+    @Attribute(.externalStorage) var photoData: Data?
+    var birthDate: Date = Calendar.current.date(from: DateComponents(year: 1995, month: 1, day: 1)) ?? .now
+    var sex: String = Sex.other.rawValue
+    var heightCm: Double = 0
+    var weightKg: Double = 0
+    var targetWeightKg: Double = 0
+    var activity: String = ActivityLevel.moderate.rawValue
+    var goal: String = FitnessGoal.maintain.rawValue
+
+    init() {}
+
+    var sexValue: Sex { Sex(rawValue: sex) ?? .other }
+    var activityLevel: ActivityLevel { ActivityLevel(rawValue: activity) ?? .moderate }
+    var fitnessGoal: FitnessGoal { FitnessGoal(rawValue: goal) ?? .maintain }
+
+    var age: Int { Calendar.current.dateComponents([.year], from: birthDate, to: .now).year ?? 0 }
+
+    var bmi: Double? {
+        guard heightCm > 0, weightKg > 0 else { return nil }
+        let m = heightCm / 100
+        return weightKg / (m * m)
+    }
+
+    /// Metabolismo basale (Mifflin-St Jeor).
+    var bmr: Double? {
+        guard heightCm > 0, weightKg > 0 else { return nil }
+        let base = 10 * weightKg + 6.25 * heightCm - 5 * Double(age)
+        switch sexValue { case .male: return base + 5; case .female: return base - 161; case .other: return base - 78 }
+    }
+
+    /// Fabbisogno giornaliero stimato (BMR × livello di attività).
+    var tdee: Double? { bmr.map { $0 * activityLevel.factor } }
+    var suggestedCalories: Double? { tdee.map { ($0 + fitnessGoal.calorieDelta).rounded() } }
+    var suggestedProtein: Double? {
+        weightKg > 0 ? (weightKg * (fitnessGoal == .gain ? 2.0 : 1.8)).rounded() : nil
     }
 }

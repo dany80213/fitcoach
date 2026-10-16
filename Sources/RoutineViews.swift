@@ -1,53 +1,39 @@
 import SwiftUI
 import SwiftData
 
-// MARK: - Sezione Allenamenti (routine + storico)
+// MARK: - Sezione Allenamenti (routine)
 
 struct TrainingView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Routine.createdAt) private var routines: [Routine]
-    @Query(sort: \Workout.date, order: .reverse) private var workouts: [Workout]
-    @State private var tab = Tab.routines
     @State private var path = NavigationPath()
-
-    enum Tab: String, CaseIterable { case routines = "Routine", history = "Storico" }
 
     var body: some View {
         NavigationStack(path: $path) {
-            VStack(spacing: 0) {
-                Picker("Sezione", selection: $tab) {
-                    ForEach(Tab.allCases, id: \.self) { Text($0.rawValue).tag($0) }
+            routineList
+                .background(AppBackground())
+                .navigationTitle("Allenamenti")
+                .navigationDestination(for: Routine.self) { RoutineEditorView(routine: $0) }
+                .navigationDestination(for: Workout.self) { WorkoutDetailView(workout: $0) }
+                .toolbar {
+                    Menu {
+                        Button { newRoutine() } label: { Label("Nuova routine", systemImage: "list.clipboard") }
+                        Button { emptyWorkout() } label: { Label("Allenamento vuoto", systemImage: "plus.circle") }
+                    } label: { Label("Aggiungi", systemImage: "plus") }
                 }
-                .pickerStyle(.segmented)
-                .padding([.horizontal, .top])
-                .padding(.bottom, 8)
-                switch tab {
-                case .routines: routineList
-                case .history: historyList
-                }
-            }
-            .navigationTitle("Allenamenti")
-            .background(AppBackground())
-            .navigationDestination(for: Routine.self) { RoutineEditorView(routine: $0) }
-            .navigationDestination(for: Workout.self) { WorkoutDetailView(workout: $0) }
-            .toolbar {
-                Button(action: add) {
-                    Label(tab == .routines ? "Nuova routine" : "Allenamento vuoto", systemImage: "plus")
-                }
-            }
         }
     }
 
-    private func add() {
-        if tab == .routines {
-            let r = Routine(name: "Nuova routine")
-            context.insert(r)
-            path.append(r)
-        } else {
-            let w = Workout(name: "Allenamento del \(Date.now.formatted(date: .abbreviated, time: .omitted))")
-            context.insert(w)
-            path.append(w)
-        }
+    private func newRoutine() {
+        let r = Routine(name: "Nuova routine")
+        context.insert(r)
+        path.append(r)
+    }
+
+    private func emptyWorkout() {
+        let w = Workout(name: "Allenamento del \(Date.now.formatted(date: .abbreviated, time: .omitted))")
+        context.insert(w)
+        path.append(w)
     }
 
     private var routineList: some View {
@@ -84,28 +70,6 @@ struct TrainingView: View {
         let sets = r.items.reduce(0) { $0 + $1.sets.count }
         let names = r.sortedItems.prefix(3).map(\.exerciseName).joined(separator: ", ")
         return "\(r.items.count) esercizi · \(sets) serie" + (names.isEmpty ? "" : " — \(names)")
-    }
-
-    private var historyList: some View {
-        List {
-            ForEach(workouts) { w in
-                NavigationLink(value: w) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(w.name).font(.headline)
-                        Text("\(w.date.formatted(date: .abbreviated, time: .omitted)) · \(w.exercises.count) esercizi · \(Int(w.totalVolume)) kg volume")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-            }
-            .onDelete { idx in idx.map { workouts[$0] }.forEach(context.delete) }
-        }
-        .transparentList()
-        .overlay {
-            if workouts.isEmpty {
-                ContentUnavailableView("Nessun allenamento", systemImage: "dumbbell",
-                                       description: Text("Avvia una routine per registrarne uno."))
-            }
-        }
     }
 }
 

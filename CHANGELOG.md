@@ -16,7 +16,13 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), vers
 - **Liquid Glass** (iOS 26 / macOS 26): tab bar fluttuante che si minimizza, pulsanti e badge delle serie in vetro, riepilogo calorie e chat del coach in vetro, sfondo sfumato.
 - Crediti e licenze dei dati nelle Impostazioni.
 
+- Scheda **Home**: saluto con foto, riepilogo degli ultimi 7 giorni (allenamenti, serie, volume) e storico di tutti gli allenamenti passati raggruppati per mese.
+- Scheda **Profilo**: foto (dal rullino, ridimensionata e salvata sul dispositivo), nome, data di nascita, sesso, altezza, peso, peso obiettivo, obiettivo e livello di attività, BMI e statistiche.
+- Calcolo dell'obiettivo giornaliero di calorie e proteine dai dati del profilo (Mifflin-St Jeor).
+- Il coach IA conosce il profilo (mai la foto).
+
 ### Modificato
+- Lo storico non è più in Allenamenti (che mostra solo le routine) ma nella Home; Impostazioni e coach IA sono dentro il Profilo.
 - **Requisiti minimi: iOS 26 e macOS 26** (prima 17 / 14).
 - La vecchia lista allenamenti diventa la scheda "Storico".
 

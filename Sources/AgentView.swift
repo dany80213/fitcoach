@@ -81,33 +81,25 @@ struct AgentView: View {
 }
 
 struct SettingsView: View {
-    @AppStorage("calorieGoal") private var calorieGoal = 2200.0
-    @AppStorage("proteinGoal") private var proteinGoal = 150.0
     @State private var apiKey = Keychain.load()
 
     var body: some View {
-        NavigationStack {
-            Form {
-                Section("Obiettivi giornalieri") {
-                    TextField("Calorie", value: $calorieGoal, format: .number)
-                    TextField("Proteine (g)", value: $proteinGoal, format: .number)
-                }
-                Section("Crediti") {
-                    Text("Esercizi da free-exercise-db (pubblico) e wger.de, licenza CC-BY-SA 3.0. Alimenti da Open Food Facts (ODbL).")
-                        .font(.caption).foregroundStyle(.secondary)
-                    Link("wger.de", destination: URL(string: "https://wger.de")!)
-                    Link("free-exercise-db", destination: URL(string: "https://github.com/yuhonas/free-exercise-db")!)
-                }
-                Section("Agente IA") {
-                    SecureField("Chiave API Anthropic", text: $apiKey)
-                        .onChange(of: apiKey) { Keychain.save(apiKey) }
-                    Text("Salvata nel Portachiavi. I tuoi dati vengono inviati ad Anthropic solo quando fai una domanda al coach.")
-                        .font(.caption).foregroundStyle(.secondary)
-                }
+        Form {
+            Section("Agente IA") {
+                SecureField("Chiave API Anthropic", text: $apiKey)
+                    .onChange(of: apiKey) { Keychain.save(apiKey) }
+                Text("Salvata nel Portachiavi. I tuoi dati (non la foto) vengono inviati ad Anthropic solo quando fai una domanda al coach.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
-            .formStyle(.grouped)
-            .glassList()
-            .navigationTitle("Impostazioni")
+            Section("Crediti") {
+                Text("Esercizi da free-exercise-db (pubblico) e wger.de, licenza CC-BY-SA 3.0. Alimenti da Open Food Facts (ODbL).")
+                    .font(.caption).foregroundStyle(.secondary)
+                Link("wger.de", destination: URL(string: "https://wger.de")!)
+                Link("free-exercise-db", destination: URL(string: "https://github.com/yuhonas/free-exercise-db")!)
+            }
         }
+        .formStyle(.grouped)
+        .glassList()
+        .navigationTitle("Impostazioni")
     }
 }

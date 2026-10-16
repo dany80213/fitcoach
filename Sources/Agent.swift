@@ -38,6 +38,19 @@ enum ContextBuilder {
         var lines = ["Oggi: \(Date.now.formatted(date: .complete, time: .omitted))",
                      "Obiettivi giornalieri: \(Int(calorieGoal)) kcal, \(Int(proteinGoal)) g proteine"]
 
+        if let p = (try? context.fetch(FetchDescriptor<Profile>()))?.first {
+            var bits: [String] = []
+            if !p.name.isEmpty { bits.append("nome \(p.name)") }
+            bits.append("età \(p.age) anni")
+            if p.sexValue != .other { bits.append(p.sexValue.title.lowercased()) }
+            if p.heightCm > 0 { bits.append("altezza \(Int(p.heightCm)) cm") }
+            if p.weightKg > 0 { bits.append("peso \(p.weightKg.formatted()) kg") }
+            if p.targetWeightKg > 0 { bits.append("peso obiettivo \(p.targetWeightKg.formatted()) kg") }
+            bits.append("obiettivo: \(p.fitnessGoal.title.lowercased())")
+            bits.append("attività: \(p.activityLevel.title)")
+            lines.append("Profilo: " + bits.joined(separator: ", "))
+        }
+
         let foods = (try? context.fetch(FetchDescriptor<FoodEntry>(predicate: #Predicate { $0.date >= since }, sortBy: [SortDescriptor(\.date)]))) ?? []
         lines.append("\n## Alimentazione (ultimi \(days) giorni)")
         for (day, items) in Dictionary(grouping: foods, by: { cal.startOfDay(for: $0.date) }).sorted(by: { $0.key < $1.key }) {
