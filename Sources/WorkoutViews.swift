@@ -21,6 +21,10 @@ struct WorkoutDetailView: View {
         }
         .navigationTitle(workout.name)
         .glassList()
+        #if os(iOS)
+        // Durante l'allenamento la tab bar sparisce: più spazio e niente tocchi accidentali.
+        .toolbarVisibility(.hidden, for: .tabBar)
+        #endif
         .sheet(isPresented: $showPicker) { ExercisePickerView { addExercise($0) } }
     }
 

@@ -26,6 +26,7 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), vers
 - Riposo per esercizio (predefinito, nessuno, da 30 s a 5 min) dal menu ⋯ e riposo predefinito globale nelle Impostazioni.
 
 ### Modificato
+- Durante un allenamento la tab bar si nasconde (solo iOS), per avere più spazio e non toccare per sbaglio altre schede; torna visibile uscendo.
 - Lo storico non è più in Allenamenti (che mostra solo le routine) ma nella Home; Impostazioni e coach IA sono dentro il Profilo.
 - **Requisiti minimi: iOS 26 e macOS 26** (prima 17 / 14).
 - La vecchia lista allenamenti diventa la scheda "Storico".
