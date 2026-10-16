@@ -52,8 +52,16 @@ enum ContextBuilder {
         for w in workouts {
             lines.append("- \(w.date.formatted(date: .abbreviated, time: .omitted)) \(w.name) (volume \(Int(w.totalVolume)) kg)")
             for ex in w.sortedExercises {
-                let sets = ex.sortedSets.filter(\.isDone).map { "\($0.weight.formatted())kg×\($0.reps)" }.joined(separator: ", ")
+                let sets = ex.sortedSets.filter(\.isDone).map { "\($0.setType.badge.map { "[\($0)] " } ?? "")\($0.weight.formatted())kg×\($0.reps)" }.joined(separator: ", ")
                 if !sets.isEmpty { lines.append("    \(ex.name): \(sets)") }
+            }
+        }
+
+        let routines = (try? context.fetch(FetchDescriptor<Routine>(sortBy: [SortDescriptor(\.createdAt)]))) ?? []
+        if !routines.isEmpty {
+            lines.append("\n## Routine dell'utente (W=riscaldamento, F=cedimento, D=drop set)")
+            for r in routines {
+                lines.append("- \(r.name): " + r.sortedItems.map { "\($0.exerciseName) (\($0.sets.count) serie)" }.joined(separator: ", "))
             }
         }
         return lines.joined(separator: "\n")

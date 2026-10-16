@@ -4,6 +4,16 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), vers
 
 ## [Non rilasciato]
 
+### Aggiunto
+- Sezione Allenamenti con **Routine** personalizzate (esercizi + serie) e **Storico**.
+- Tipi di serie: Normale, Riscaldamento, Cedimento, Drop set (il riscaldamento non conta nel volume).
+- Libreria di ~870 esercizi importata da free-exercise-db, risincronizzata ogni 7 giorni o a mano; filtro per muscolo ed esercizi personalizzati.
+- Avvio di un allenamento da una routine, con pesi precompilati dall'ultima volta.
+- Il coach IA vede le routine e i tipi di serie.
+
+### Modificato
+- La vecchia lista allenamenti diventa la scheda "Storico".
+
 ## [0.1.0] - 2026-10-16
 
 ### Aggiunto

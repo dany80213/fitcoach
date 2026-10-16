@@ -7,14 +7,17 @@ struct FitCoachApp: App {
         WindowGroup {
             RootView()
         }
-        .modelContainer(for: [Workout.self, WorkoutExercise.self, SetEntry.self, FoodEntry.self])
+        .modelContainer(for: [Workout.self, WorkoutExercise.self, SetEntry.self, FoodEntry.self,
+                              Exercise.self, Routine.self, RoutineExercise.self, RoutineSet.self])
     }
 }
 
 struct RootView: View {
+    @Environment(\.modelContext) private var context
+
     var body: some View {
         TabView {
-            WorkoutListView()
+            TrainingView()
                 .tabItem { Label("Allenamenti", systemImage: "dumbbell") }
             NutritionView()
                 .tabItem { Label("Calorie", systemImage: "fork.knife") }
@@ -23,5 +26,6 @@ struct RootView: View {
             SettingsView()
                 .tabItem { Label("Impostazioni", systemImage: "gearshape") }
         }
+        .task { await ExerciseLibrary.autoSync(in: context) }
     }
 }
