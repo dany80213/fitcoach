@@ -39,6 +39,10 @@ final class Workout {
 final class WorkoutExercise {
     var name: String
     var order: Int
+    /// 0 = nessun superset; esercizi con lo stesso valore (e adiacenti) formano un superset.
+    var supersetID: Int = 0
+    /// Riposo dopo ogni serie: 0 = predefinito, -1 = nessuno, altrimenti secondi.
+    var restSeconds: Int = 0
     var workout: Workout?
     @Relationship(deleteRule: .cascade, inverse: \SetEntry.exercise)
     var sets: [SetEntry] = []
@@ -201,6 +205,8 @@ final class Routine {
         context.insert(w)
         for (n, item) in sortedItems.enumerated() {
             let ex = WorkoutExercise(name: item.exerciseName, order: n)
+            ex.supersetID = item.supersetID
+            ex.restSeconds = item.restSeconds
             context.insert(ex)
             w.exercises.append(ex)
             let previous = Workout.previousSets(for: item.exerciseName, excluding: w, in: context)
@@ -219,6 +225,8 @@ final class Routine {
 final class RoutineExercise {
     var exerciseName: String
     var order: Int
+    var supersetID: Int = 0
+    var restSeconds: Int = 0
     var routine: Routine?
     @Relationship(deleteRule: .cascade, inverse: \RoutineSet.item)
     var sets: [RoutineSet] = []
@@ -319,5 +327,58 @@ final class Profile {
     var suggestedCalories: Double? { tdee.map { ($0 + fitnessGoal.calorieDelta).rounded() } }
     var suggestedProtein: Double? {
         weightKg > 0 ? (weightKg * (fitnessGoal == .gain ? 2.0 : 1.8)).rounded() : nil
+    }
+}
+
+// MARK: - Superset
+
+/// Esercizio che può far parte di un superset (allenamento o routine).
+protocol SupersetMember: AnyObject {
+    var supersetID: Int { get set }
+    var order: Int { get }
+}
+extension WorkoutExercise: SupersetMember {}
+extension RoutineExercise: SupersetMember {}
+
+enum Superset {
+    /// Unisce `item` al superset di `previous` (lo crea se `previous` non ne ha uno).
+    static func join<T: SupersetMember>(_ item: T, with previous: T, in all: [T]) {
+        if previous.supersetID == 0 { previous.supersetID = (all.map(\.supersetID).max() ?? 0) + 1 }
+        item.supersetID = previous.supersetID
+    }
+
+    /// Toglie `item` dal suo superset; se resta un solo esercizio, scioglie anche quello.
+    static func leave<T: SupersetMember>(_ item: T, in all: [T]) {
+        let gid = item.supersetID
+        item.supersetID = 0
+        cleanup(gid, in: all)
+    }
+
+    /// Un superset con un solo membro non ha senso: lo scioglie.
+    static func cleanup<T: SupersetMember>(_ gid: Int, in all: [T]) {
+        guard gid != 0 else { return }
+        let members = all.filter { $0.supersetID == gid }
+        if members.count == 1 { members[0].supersetID = 0 }
+    }
+
+    /// Lettera di ogni superset (A, B, …) in ordine di comparsa.
+    static func letters<T: SupersetMember>(_ sorted: [T]) -> [Int: String] {
+        var out: [Int: String] = [:]
+        for e in sorted where e.supersetID != 0 && out[e.supersetID] == nil {
+            out[e.supersetID] = String(UnicodeScalar(UInt8(65 + out.count % 26)))
+        }
+        return out
+    }
+}
+
+extension WorkoutExercise {
+    /// Secondi di riposo da avviare dopo una serie completata, o `nil` se non serve:
+    /// nei superset si riposa solo dopo l'ultimo esercizio del giro.
+    func restToStart(in siblings: [WorkoutExercise]) -> Int? {
+        if supersetID != 0,
+           let last = siblings.filter({ $0.supersetID == supersetID }).max(by: { $0.order < $1.order }),
+           last !== self { return nil }
+        let seconds = restSeconds == 0 ? RestTimer.defaultSeconds : restSeconds
+        return seconds > 0 ? seconds : nil
     }
 }

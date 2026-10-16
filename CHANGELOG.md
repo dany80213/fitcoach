@@ -21,6 +21,10 @@ Formato basato su [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), vers
 - Calcolo dell'obiettivo giornaliero di calorie e proteine dai dati del profilo (Mifflin-St Jeor).
 - Il coach IA conosce il profilo (mai la foto).
 
+- **Superset**: dal menu ⋯ di un esercizio si crea un superset con quello sopra (badge "SUPERSET A/B…" colorato); vale sia nelle routine sia durante l'allenamento e viene copiato quando avvii una routine.
+- **Timer di riposo**: parte da solo quando completi una serie, con barra in Liquid Glass sopra la tab bar (−15 s, +15 s, salta), vibrazione a fine tempo e notifica se l'app è in background. Nei superset il riposo parte dopo l'ultimo esercizio del giro.
+- Riposo per esercizio (predefinito, nessuno, da 30 s a 5 min) dal menu ⋯ e riposo predefinito globale nelle Impostazioni.
+
 ### Modificato
 - Lo storico non è più in Allenamenti (che mostra solo le routine) ma nella Home; Impostazioni e coach IA sono dentro il Profilo.
 - **Requisiti minimi: iOS 26 e macOS 26** (prima 17 / 14).

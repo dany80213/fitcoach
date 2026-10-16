@@ -82,9 +82,17 @@ struct AgentView: View {
 
 struct SettingsView: View {
     @State private var apiKey = Keychain.load()
+    @AppStorage("defaultRestSeconds") private var defaultRest = 90
 
     var body: some View {
         Form {
+            Section("Allenamento") {
+                Stepper(value: $defaultRest, in: 15...600, step: 15) {
+                    LabeledContent("Riposo predefinito", value: RestTimer.format(defaultRest))
+                }
+                Text("Il timer parte da solo quando completi una serie. Puoi cambiare il riposo di ogni esercizio dal menu ⋯. Nei superset il riposo parte dopo l'ultimo esercizio del giro.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
             Section("Agente IA") {
                 SecureField("Chiave API Anthropic", text: $apiKey)
                     .onChange(of: apiKey) { Keychain.save(apiKey) }

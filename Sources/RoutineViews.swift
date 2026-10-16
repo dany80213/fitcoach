@@ -87,7 +87,7 @@ struct RoutineEditorView: View {
                 TextField("Note", text: $routine.notes, axis: .vertical)
             }
             ForEach(routine.sortedItems) { item in
-                RoutineItemSection(item: item)
+                RoutineItemSection(item: item, siblings: routine.sortedItems)
             }
             Section {
                 Button { showPicker = true } label: { Label("Aggiungi esercizio", systemImage: "plus.circle") }
@@ -110,11 +110,14 @@ struct RoutineEditorView: View {
 
 private struct RoutineItemSection: View {
     @Bindable var item: RoutineExercise
+    let siblings: [RoutineExercise]
     @Environment(\.modelContext) private var context
 
     var body: some View {
         let sets = item.sortedSets
         let labels = setLabels(sets.map(\.setType))
+        let index = siblings.firstIndex { $0 === item } ?? 0
+        let letters = Superset.letters(siblings)
         Section {
             ForEach(Array(sets.enumerated()), id: \.element.persistentModelID) { i, s in
                 RoutineSetRow(set: s, label: labels[i])
@@ -128,13 +131,18 @@ private struct RoutineItemSection: View {
                 item.sets.append(s)
             }
         } header: {
-            HStack {
-                Text(item.exerciseName)
-                Spacer()
-                Menu {
-                    Button("Rimuovi esercizio", role: .destructive) { context.delete(item) }
-                } label: { Image(systemName: "ellipsis.circle") }
-            }
+            ExerciseHeader(
+                name: item.exerciseName,
+                supersetLetter: letters[item.supersetID],
+                restSeconds: $item.restSeconds,
+                canJoin: index > 0 && (siblings[index - 1].supersetID != item.supersetID || item.supersetID == 0),
+                onJoin: { Superset.join(item, with: siblings[index - 1], in: siblings) },
+                onLeave: { Superset.leave(item, in: siblings) },
+                onRemove: {
+                    let gid = item.supersetID
+                    context.delete(item)
+                    Superset.cleanup(gid, in: siblings.filter { $0 !== item })
+                })
         }
     }
 }

@@ -12,6 +12,7 @@ struct WorkoutDetailView: View {
             Section { TextField("Nome", text: $workout.name) }
             ForEach(workout.sortedExercises) { ex in
                 ExerciseSection(exercise: ex,
+                                siblings: workout.sortedExercises,
                                 previous: Workout.previousSets(for: ex.name, excluding: workout, in: context))
             }
             Section {
@@ -24,7 +25,7 @@ struct WorkoutDetailView: View {
     }
 
     private func addExercise(_ name: String) {
-        let ex = WorkoutExercise(name: name, order: workout.exercises.count)
+        let ex = WorkoutExercise(name: name, order: (workout.exercises.map(\.order).max() ?? -1) + 1)
         context.insert(ex)
         workout.exercises.append(ex)
         // Precompila dalle serie dell'ultima volta (come fa Hevy).
@@ -43,15 +44,22 @@ struct WorkoutDetailView: View {
 
 private struct ExerciseSection: View {
     @Bindable var exercise: WorkoutExercise
+    /// Tutti gli esercizi dell'allenamento, in ordine (serve per i superset).
+    let siblings: [WorkoutExercise]
     let previous: [SetEntry]
     @Environment(\.modelContext) private var context
+    @Environment(RestTimer.self) private var restTimer
 
     var body: some View {
         let sets = exercise.sortedSets
         let labels = setLabels(sets.map(\.setType))
+        let index = siblings.firstIndex { $0 === exercise } ?? 0
+        let letters = Superset.letters(siblings)
         Section {
             ForEach(Array(sets.enumerated()), id: \.element.persistentModelID) { i, s in
-                SetRow(set: s, label: labels[i], previous: previous.indices.contains(i) ? previous[i] : nil)
+                SetRow(set: s, label: labels[i], previous: previous.indices.contains(i) ? previous[i] : nil) {
+                    startRest(after: i + 1)
+                }
             }
             .onDelete { idx in idx.map { sets[$0] }.forEach(context.delete) }
             Button("Aggiungi serie") {
@@ -61,14 +69,24 @@ private struct ExerciseSection: View {
                 exercise.sets.append(s)
             }
         } header: {
-            HStack {
-                Text(exercise.name)
-                Spacer()
-                Menu {
-                    Button("Rimuovi esercizio", role: .destructive) { context.delete(exercise) }
-                } label: { Image(systemName: "ellipsis.circle") }
-            }
+            ExerciseHeader(
+                name: exercise.name,
+                supersetLetter: letters[exercise.supersetID],
+                restSeconds: $exercise.restSeconds,
+                canJoin: index > 0 && (siblings[index - 1].supersetID != exercise.supersetID || exercise.supersetID == 0),
+                onJoin: { Superset.join(exercise, with: siblings[index - 1], in: siblings) },
+                onLeave: { Superset.leave(exercise, in: siblings) },
+                onRemove: {
+                    let gid = exercise.supersetID
+                    context.delete(exercise)
+                    Superset.cleanup(gid, in: siblings.filter { $0 !== exercise })
+                })
         }
+    }
+
+    private func startRest(after setNumber: Int) {
+        guard let seconds = exercise.restToStart(in: siblings) else { return }
+        restTimer.start(seconds: seconds, label: "\(exercise.name) · serie \(setNumber)")
     }
 }
 
@@ -76,6 +94,7 @@ private struct SetRow: View {
     @Bindable var set: SetEntry
     let label: String
     let previous: SetEntry?
+    let onCompleted: () -> Void
 
     var body: some View {
         HStack {
@@ -90,6 +109,7 @@ private struct SetRow: View {
             Toggle("Fatta", isOn: $set.isDone).labelsHidden()
         }
         .textFieldStyle(.roundedBorder)
+        .onChange(of: set.isDone) { _, done in if done { onCompleted() } }
         #if os(iOS)
         .keyboardType(.decimalPad)
         #endif

@@ -66,7 +66,7 @@ enum ContextBuilder {
             lines.append("- \(w.date.formatted(date: .abbreviated, time: .omitted)) \(w.name) (volume \(Int(w.totalVolume)) kg)")
             for ex in w.sortedExercises {
                 let sets = ex.sortedSets.filter(\.isDone).map { "\($0.setType.badge.map { "[\($0)] " } ?? "")\($0.weight.formatted())kg×\($0.reps)" }.joined(separator: ", ")
-                if !sets.isEmpty { lines.append("    \(ex.name): \(sets)") }
+                if !sets.isEmpty { lines.append("    \(ex.name)\(ex.supersetID != 0 ? " [superset]" : ""): \(sets)") }
             }
         }
 

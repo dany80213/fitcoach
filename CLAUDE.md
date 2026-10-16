@@ -26,6 +26,8 @@ Prima di dichiarare finita una modifica, compila **entrambe** le piattaforme. No
 | `HomeView.swift` | tab Home: saluto, riepilogo 7 giorni, storico allenamenti per mese (esclude quelli senza esercizi) |
 | `ProfileView.swift` | tab Profilo: foto (`PhotosPicker`), dati fisici, obiettivo, calcolo kcal/proteine, statistiche, link alle Impostazioni |
 | `Avatar.swift`, `NumberField.swift` | foto profilo cross-platform (ImageIO, JPEG ≤640 px) e campo numerico vuoto-se-zero |
+| `RestTimer.swift` | `RestTimer` (`@Observable`, un'istanza nell'environment), `RestTimerBar` e modifier `restTimerInset()` applicato a ogni tab |
+| `ExerciseHeader.swift` | intestazione esercizio condivisa da allenamento e routine: badge superset, riposo, menu azioni |
 | `RoutineViews.swift` | scheda Allenamenti (Routine/Storico), editor routine, `ExercisePickerView`, `SetTypeMenu` |
 | `WorkoutViews.swift` | dettaglio allenamento, serie precompilate dall'ultima volta che l'esercizio è stato fatto |
 | `NutritionViews.swift` | diario giornaliero, ricerca alimento, scelta porzione/pasto, inserimento manuale |
@@ -40,6 +42,9 @@ Prima di dichiarare finita una modifica, compila **entrambe** le piattaforme. No
 - **Contesto dell'agente**: `ContextBuilder.build` ricalcola a ogni domanda gli ultimi 14 giorni di cibo e allenamenti. Il system prompt impone di basarsi solo su quei dati e di non dare consigli medici: mantieni queste regole. Modello in `AgentClient.model` (`claude-sonnet-5-5`).
 - **Relazioni SwiftData**: dopo `context.insert(x)` aggiungi l'oggetto all'array del padre (`parent.items.append(x)`); impostare solo il lato inverso (`x.parent = p`) non aggiorna subito la UI.
 - **Profilo**: un solo record `Profile` (creato al primo accesso al tab). La foto è `externalStorage`, ridimensionata con `AvatarImage.downscaledJPEG`; non va mai inviata al coach. `calorieGoal`/`proteinGoal` restano in `@AppStorage` e si modificano dal Profilo. Per i campi numerici usa `NumberField` (un `TextField(value:format:)` lascia lo "0" iniziale).
+- **Superset**: `supersetID` (0 = nessuno) su `WorkoutExercise` e `RoutineExercise`; esercizi con lo stesso id e adiacenti formano il gruppo. Usa sempre gli helper `Superset.join/leave/cleanup` (sciolgono i gruppi da un solo membro). `makeWorkout` copia `supersetID` e `restSeconds`.
+- **Riposo**: `restSeconds` per esercizio (0 = predefinito da `defaultRestSeconds` in `@AppStorage`, -1 = nessuno). `WorkoutExercise.restToStart(in:)` decide se avviare il timer: nei superset solo dopo l'ultimo esercizio. Il timer è unico per tutta l'app; `tabViewBottomAccessory` non esiste su macOS e nell'SDK 26.0 non ha `isEnabled`, per questo la barra è un `safeAreaInset`. Notifica locale (`UNUserNotificationCenter`) programmata alla partenza e annullata a fine/skip.
+- **Test UI nel simulatore**: i tocchi rapidi non attivano gli interruttori: usa `tap` con `duration` ~0.15.
 - **Storico**: vive nella Home; il tab Allenamenti mostra solo le routine. Il volume esclude il riscaldamento.
 - **Tipi di serie**: `SetType` (normal/warmup/failure/dropset). Le normali sono numerate, le altre mostrano W/F/D; il riscaldamento è escluso dal volume. Nuove proprietà dei modelli devono avere un valore di default (migrazione leggera sui dati esistenti).
 - **Libreria esercizi**: due fonti, `yuhonas/free-exercise-db` e `wger.de` (`/api/v2/exerciseinfo/?limit=1000`, ~1,2 MB gzip, CC-BY-SA 3.0: tieni i crediti in Impostazioni e README). Nomi in inglese; i nomi italiani di wger finiscono in `aliases` (solo per la ricerca). La deduplica usa `ExerciseLibrary.normalize` (ordine parole, plurali, flye→fly). Se cambi fonti o mappatura, incrementa `libraryVersion` per forzare il resync. Gli esercizi con `isCustom` non vanno mai sovrascritti dal sync.
