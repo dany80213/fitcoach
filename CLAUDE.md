@@ -42,6 +42,32 @@ Prima di dichiarare finita una modifica, compila **entrambe** le piattaforme. No
 
 Provider FatSecret, scansione codice a barre, grafici di progressione, timer di riposo, esportazione dati, tool-use dell'agente (es. "aggiungi 100 g di riso al pranzo").
 
-## Git
+## Git, commit e versioning
 
-Branch `main`, remoto `dany80213/fitcoach`. Commit piccoli e descrittivi. Non inserire email personali/di lavoro nei commit: usa l'indirizzo noreply di GitHub.
+Branch `main`, remoto `dany80213/fitcoach`. Collaboratori con permesso di scrittura: dany80213 e alessandro-guttadauro.
+
+### Commit: sempre
+- **Dopo ogni modifica completata e compilata, fai subito il commit** (e il push su `main`): niente lavoro lasciato non committato a fine task. Se la modifica non compila su entrambe le piattaforme, non committare: sistemala prima.
+- Un commit = una modifica logica, piccolo. Non mescolare refactoring e funzionalità.
+- Messaggi in stile Conventional Commits, in italiano o inglese ma coerenti: `feat: ...`, `fix: ...`, `refactor: ...`, `docs: ...`, `chore: ...`. Prima riga ≤ 72 caratteri, il perché nel corpo se non è ovvio.
+- Prima di committare controlla `git status` e `git diff --staged`: niente `build/`, `*.xcodeproj`, chiavi API, file `.env`.
+- Non riscrivere la storia pubblicata (`push --force`, `rebase` su commit già pushati) e non lavorare direttamente su `main` per modifiche grosse: usa un branch `feat/...` o `fix/...` e una pull request. Fai `git pull --rebase` prima di pushare, perché lavora anche Alessandro.
+- Non inserire email personali/di lavoro nei commit: usa l'indirizzo noreply di GitHub (`<id>+<utente>@users.noreply.github.com`).
+
+### Versioning (SemVer `MAJOR.MINOR.PATCH`)
+- **MAJOR**: cambi incompatibili (es. modifica dei modelli SwiftData che richiede migrazione manuale o perde dati). **MINOR**: nuove funzionalità compatibili. **PATCH**: solo correzioni. Finché siamo `0.x` le API possono ancora cambiare.
+- La versione vive in **`project.yml`**: `MARKETING_VERSION` (SemVer) e `CURRENT_PROJECT_VERSION` (numero di build, intero che cresce a ogni release, anche per le patch). Dopo la modifica esegui `xcodegen generate`.
+- Tieni **`CHANGELOG.md`** (formato Keep a Changelog): ogni commit `feat`/`fix` aggiunge una riga sotto `## [Non rilasciato]`; alla release quella sezione diventa `## [X.Y.Z] - AAAA-MM-GG`.
+
+### Release
+1. Verifica che `main` sia pulito e allineato (`git status -sb`), che compili su macOS e iOS Simulator e che l'app parta.
+2. Aggiorna `MARKETING_VERSION` e `CURRENT_PROJECT_VERSION` in `project.yml` e sposta le voci del changelog nella nuova versione.
+3. Commit: `chore(release): vX.Y.Z` e push.
+4. Tag annotato e release su GitHub:
+   ```bash
+   git tag -a vX.Y.Z -m "FitCoach X.Y.Z"
+   git push origin vX.Y.Z
+   gh release create vX.Y.Z --title "FitCoach X.Y.Z" --notes-file <(sed -n '/^## \[X.Y.Z\]/,/^## \[/p' CHANGELOG.md | sed '$d')
+   ```
+5. I tag sono immutabili: se la release è sbagliata, pubblica una patch successiva, non spostare il tag.
+6. Prima di creare una release chiedi conferma all'utente: è un'azione pubblica.
